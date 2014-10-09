@@ -25,6 +25,7 @@ import com.noisepages.nettoyeur.bluetooth.BluetoothSppObserver;
 import com.noisepages.nettoyeur.bluetooth.midi.BluetoothMidiDevice;
 import com.noisepages.nettoyeur.midi.MidiReceiver;
 
+
 public class BluetoothMidiTest extends Activity implements OnClickListener {
 
   private static final String TAG = "Midi Test";
@@ -195,19 +196,26 @@ public class BluetoothMidiTest extends Activity implements OnClickListener {
     	  //byte data[] = new byte[] { (byte) 0xF0, (byte) 0x7D, (byte) 0x00, (byte) 0x22, (byte) 0xF7 };
     	  //host mode
     	  byte data[] = new byte[] { (byte) 0xF0, (byte) 0x7D, (byte) 0x00, (byte) 0x5A, (byte) 0x00, (byte) 0xF7 };
+    	  midiService.getMidiOut().beginBlock();
+    	  
     	  for (int i=0; i<data.length; i++) {
     		  midiService.getMidiOut().onRawByte(data[i]);
     	  }
+    	  midiService.getMidiOut().endBlock();
     	  //set interval to 10ms
     	  data = new byte[] { (byte) 0xF0, (byte) 0x7D, (byte) 0x00, (byte) 0x03, (byte) 0x00,(byte) 0x0A, (byte) 0xF7 };
+    	  midiService.getMidiOut().beginBlock();
     	  for (int i=0; i<data.length; i++) {
     		  midiService.getMidiOut().onRawByte(data[i]);
     	  }
+    	  midiService.getMidiOut().endBlock();
     	  //start stream port 0
     	  data = new byte[] { (byte) 0xF0, (byte) 0x7D, (byte) 0x00, (byte) 0x01, (byte) 0x41, (byte) 0xF7 };
+    	  midiService.getMidiOut().beginBlock();
     	  for (int i=0; i<data.length; i++) {
     		  midiService.getMidiOut().onRawByte(data[i]);
     	  }
+    	  midiService.getMidiOut().endBlock();
     	  break;
       case R.id.play_button:
         if (!on) {
