@@ -7,4 +7,5 @@
 	
 	
 	<string name="play_button_text">Send MIDI event</string>
+	<string name="reset_button_text">reset</string>
 </resources>

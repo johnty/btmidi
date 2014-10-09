@@ -19,10 +19,10 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.noisepages.nettoyeur.bluetooth.util.*;
 import com.noisepages.nettoyeur.bluetooth.BluetoothSppConnection;
 import com.noisepages.nettoyeur.bluetooth.BluetoothSppObserver;
 import com.noisepages.nettoyeur.bluetooth.midi.BluetoothMidiDevice;
-import com.noisepages.nettoyeur.bluetooth.util.DeviceListActivity;
 import com.noisepages.nettoyeur.midi.MidiReceiver;
 
 public class BluetoothMidiTest extends Activity implements OnClickListener {
@@ -33,6 +33,7 @@ public class BluetoothMidiTest extends Activity implements OnClickListener {
 
   private Button connect;
   private Button play;
+  private Button reset;
   private TextView logs;
 
   private BluetoothMidiDevice midiService = null;
@@ -57,6 +58,9 @@ public class BluetoothMidiTest extends Activity implements OnClickListener {
       @Override
       public void run() {
         logs.append(s + ((s.endsWith("\n")) ? "" : "\n"));
+        if (logs.length() >= 300) {
+        	logs.setText("");
+        }
       }
     });
   }
@@ -79,6 +83,7 @@ public class BluetoothMidiTest extends Activity implements OnClickListener {
   };
 
   private final MidiReceiver receiver = new MidiReceiver() {
+	  
     @Override
     public void onNoteOff(int channel, int key, int velocity) {
       post("note off: " + channel + ", " + key + ", " + velocity);
@@ -152,6 +157,9 @@ public class BluetoothMidiTest extends Activity implements OnClickListener {
     connect.setOnClickListener(this);
     play = (Button) findViewById(R.id.play_button);
     play.setOnClickListener(this);
+    reset = (Button) findViewById(R.id.reset_button);
+    reset.setOnClickListener(this);
+    
     logs = (TextView) findViewById(R.id.log_box);
     logs.setMovementMethod(new ScrollingMovementMethod());
   }
@@ -182,6 +190,25 @@ public class BluetoothMidiTest extends Activity implements OnClickListener {
           midiService.close();
         }
         break;
+      case R.id.reset_button:
+    	  post("switching to host mode and turning on s1");
+    	  //byte data[] = new byte[] { (byte) 0xF0, (byte) 0x7D, (byte) 0x00, (byte) 0x22, (byte) 0xF7 };
+    	  //host mode
+    	  byte data[] = new byte[] { (byte) 0xF0, (byte) 0x7D, (byte) 0x00, (byte) 0x5A, (byte) 0x00, (byte) 0xF7 };
+    	  for (int i=0; i<data.length; i++) {
+    		  midiService.getMidiOut().onRawByte(data[i]);
+    	  }
+    	  //set interval to 10ms
+    	  data = new byte[] { (byte) 0xF0, (byte) 0x7D, (byte) 0x00, (byte) 0x03, (byte) 0x00,(byte) 0x0A, (byte) 0xF7 };
+    	  for (int i=0; i<data.length; i++) {
+    		  midiService.getMidiOut().onRawByte(data[i]);
+    	  }
+    	  //start stream port 0
+    	  data = new byte[] { (byte) 0xF0, (byte) 0x7D, (byte) 0x00, (byte) 0x01, (byte) 0x41, (byte) 0xF7 };
+    	  for (int i=0; i<data.length; i++) {
+    		  midiService.getMidiOut().onRawByte(data[i]);
+    	  }
+    	  break;
       case R.id.play_button:
         if (!on) {
           midiService.getMidiOut().onNoteOn(0, note, 80);
