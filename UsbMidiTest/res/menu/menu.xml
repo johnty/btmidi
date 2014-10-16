@@ -2,4 +2,6 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 	<item android:id="@+id/connect_item"
 		android:title="@string/connect_text" />
+	<item android:id="@+id/reset_item" android:title="@string/reset_button_text"></item>
+	<item android:id="@+id/sel_output" android:title="@string/output_sel"></item>
 </menu>
