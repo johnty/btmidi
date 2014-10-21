@@ -12,6 +12,7 @@ import android.hardware.usb.UsbDevice;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.method.ScrollingMovementMethod;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -19,6 +20,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.noisepages.nettoyeur.midi.MidiReceiver;
+import com.noisepages.nettoyeur.midi.util.SystemMessageDecoder;
+import com.noisepages.nettoyeur.midi.util.SystemMessageReceiver;
 import com.noisepages.nettoyeur.usb.ConnectionFailedException;
 import com.noisepages.nettoyeur.usb.DeviceNotConnectedException;
 import com.noisepages.nettoyeur.usb.InterfaceNotAvailableException;
@@ -37,7 +40,9 @@ public class UsbMidiTest extends Activity {
 	private UsbMidiDevice midiDevice = null;
 	private MidiReceiver midiOut = null;
 	private Handler handler;
-	
+	private SystemMessageDecoder midiSysDecoder;
+	private SystemMessageReceiver midiSysMsgReceiver;
+
 	int valBefore;
 
 	private Toast toast = null;
@@ -55,10 +60,88 @@ public class UsbMidiTest extends Activity {
 		});
 	}
 
+	private final SystemMessageReceiver midiSysExReceiver = new SystemMessageReceiver() {
+
+		@Override
+		public void onSystemExclusive(byte[] sysex) {
+			// TODO Auto-generated method stub
+			StringBuilder sb = new StringBuilder();
+		    for (byte b : sysex) {
+		        sb.append(String.format("%02X ", b));
+		    }
+			update("sysex: " + sb);
+			//Log.v("USBMIDI", "sysex");
+		}
+
+		@Override
+		public void onTimeCode(int value) {
+			// TODO Auto-generated method stub
+
+		}
+
+		@Override
+		public void onSongPosition(int pointer) {
+			// TODO Auto-generated method stub
+
+		}
+
+		@Override
+		public void onSongSelect(int index) {
+			// TODO Auto-generated method stub
+
+		}
+
+		@Override
+		public void onTuneRequest() {
+			// TODO Auto-generated method stub
+
+		}
+
+		@Override
+		public void onTimingClock() {
+			// TODO Auto-generated method stub
+
+		}
+
+		@Override
+		public void onStart() {
+			// TODO Auto-generated method stub
+
+		}
+
+		@Override
+		public void onContinue() {
+			// TODO Auto-generated method stub
+
+		}
+
+		@Override
+		public void onStop() {
+			// TODO Auto-generated method stub
+
+		}
+
+		@Override
+		public void onActiveSensing() {
+			// TODO Auto-generated method stub
+
+		}
+
+		@Override
+		public void onSystemReset() {
+			// TODO Auto-generated method stub
+
+		}
+
+	};
+
 	private final MidiReceiver midiReceiver = new MidiReceiver() {
 		@Override
 		public void onRawByte(byte value) {
-			update("raw byte: " + (value & 0xFF));
+			//update("raw byte: " + (value & 0xFF));
+			if (midiSysDecoder != null) {
+				midiSysDecoder.decodeByte(value);
+			}
 			if ( (value & 0xFF) == 247)
 				toast("val = " + valBefore);
 			valBefore = (value & 0xFF);
@@ -106,6 +189,7 @@ public class UsbMidiTest extends Activity {
 
 		@Override
 		public void endBlock() {}
+
 	};
 
 	private void update(final String n) {
@@ -126,6 +210,9 @@ public class UsbMidiTest extends Activity {
 		setContentView(R.layout.activity_main);
 		mainText = (TextView) findViewById(R.id.mainText);
 		mainText.setMovementMethod(new ScrollingMovementMethod());
+
+
+		midiSysDecoder = new SystemMessageDecoder(midiSysExReceiver);
 
 		UsbMidiDevice.installBroadcastHandler(this, new UsbBroadcastHandler() {
 
@@ -259,7 +346,7 @@ public class UsbMidiTest extends Activity {
 						midiDevice = device;
 						mainText.setText("Selected device: " + device.getCurrentDeviceInfo());
 						midiDevice.requestPermission(UsbMidiTest.this);
-						
+
 						UsbMidiOutputSelector outputSelector = new UsbMidiOutputSelector(midiDevice) {
 
 							@Override
@@ -280,9 +367,9 @@ public class UsbMidiTest extends Activity {
 								toast("No output selected");
 							}
 						};
-						
+
 						outputSelector.show(getFragmentManager(), "");
-						
+
 					}
 
 					@Override
@@ -290,7 +377,7 @@ public class UsbMidiTest extends Activity {
 						mainText.setText("No USB MIDI device selected.");
 					}
 				}.show(getFragmentManager(), null);
-				
+
 			}
 		}.execute(devices.toArray(new UsbMidiDevice[devices.size()]));
 	}
