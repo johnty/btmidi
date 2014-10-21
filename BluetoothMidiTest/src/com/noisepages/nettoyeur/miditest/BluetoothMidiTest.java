@@ -194,6 +194,7 @@ public class BluetoothMidiTest extends Activity implements OnClickListener {
       case R.id.reset_button:
     	  post("switching to host mode and turning on s1");
     	  //byte data[] = new byte[] { (byte) 0xF0, (byte) 0x7D, (byte) 0x00, (byte) 0x22, (byte) 0xF7 };
+
     	  //host mode
     	  byte data[] = new byte[] { (byte) 0xF0, (byte) 0x7D, (byte) 0x00, (byte) 0x5A, (byte) 0x00, (byte) 0xF7 };
     	  midiService.getMidiOut().beginBlock();

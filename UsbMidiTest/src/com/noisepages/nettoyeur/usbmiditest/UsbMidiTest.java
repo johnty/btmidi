@@ -37,6 +37,8 @@ public class UsbMidiTest extends Activity {
 	private UsbMidiDevice midiDevice = null;
 	private MidiReceiver midiOut = null;
 	private Handler handler;
+	
+	int valBefore;
 
 	private Toast toast = null;
 
@@ -56,7 +58,10 @@ public class UsbMidiTest extends Activity {
 	private final MidiReceiver midiReceiver = new MidiReceiver() {
 		@Override
 		public void onRawByte(byte value) {
-			update("raw byte: " + value);
+			update("raw byte: " + (value & 0xFF));
+			if ( (value & 0xFF) == 247)
+				toast("val = " + valBefore);
+			valBefore = (value & 0xFF);
 		}
 
 		@Override
@@ -108,7 +113,7 @@ public class UsbMidiTest extends Activity {
 			@Override
 			public void run() {
 				mainText.setText(mainText.getText() + "\n" + n);
-				if (mainText.getText().length() > 200) //clear it once in a while...
+				if (mainText.getText().length() > 400) //clear it once in a while...
 					mainText.setText("");
 			}
 		});
@@ -202,9 +207,9 @@ public class UsbMidiTest extends Activity {
 				mainText.setText("USB MIDI connection closed.");
 			}
 			return true;
-		case R.id.sel_output:
-			//actually, reset
-			byte datar[] = new byte[] { (byte) 0xF0, (byte) 0x7D, (byte) 0x00, (byte) 0x5A, (byte) 0x00, (byte) 0xF7 };
+		case R.id.stop_stream:
+			//a reset stops things...
+			byte datar[] = new byte[] { (byte) 0xF0, (byte) 0x7D, (byte) 0x00, (byte) 0x22, (byte) 0xF7 };
 			midiOut.beginBlock();
 
 			for (int i=0; i<datar.length; i++) {
@@ -213,7 +218,7 @@ public class UsbMidiTest extends Activity {
 			midiOut.endBlock();
 			return true;
 		case R.id.reset_item: {
-			//send some hardcoded config data, and reboot:
+			//set to host mode
 			byte data[] = new byte[] { (byte) 0xF0, (byte) 0x7D, (byte) 0x00, (byte) 0x5A, (byte) 0x00, (byte) 0xF7 };
 			midiOut.beginBlock();
 
@@ -229,7 +234,7 @@ public class UsbMidiTest extends Activity {
 			}
 			midiOut.endBlock();
 			//start stream port 0
-			data = new byte[] { (byte) 0xF0, (byte) 0x7D, (byte) 0x00, (byte) 0x01, (byte) 0x41, (byte) 0xF7 };
+			data = new byte[] { (byte) 0xF0, (byte) 0x7D, (byte) 0x00, (byte) 0x01, (byte) 0x40, (byte) 0xF7 };
 			midiOut.beginBlock();
 			for (int i=0; i<data.length; i++) {
 				midiOut.onRawByte(data[i]);
