@@ -107,7 +107,9 @@ public class UsbMidiTest extends Activity {
 		handler.post(new Runnable() {
 			@Override
 			public void run() {
-				mainText.setText(mainText.getText() + "\n\n" + n);
+				mainText.setText(mainText.getText() + "\n" + n);
+				if (mainText.getText().length() > 200) //clear it once in a while...
+					mainText.setText("");
 			}
 		});
 	}
@@ -201,8 +203,14 @@ public class UsbMidiTest extends Activity {
 			}
 			return true;
 		case R.id.sel_output:
-			if (midiDevice != null)
-				outputSelector.show(getFragmentManager(), "");
+			//actually, reset
+			byte datar[] = new byte[] { (byte) 0xF0, (byte) 0x7D, (byte) 0x00, (byte) 0x5A, (byte) 0x00, (byte) 0xF7 };
+			midiOut.beginBlock();
+
+			for (int i=0; i<datar.length; i++) {
+				midiOut.onRawByte(datar[i]);
+			}
+			midiOut.endBlock();
 			return true;
 		case R.id.reset_item: {
 			//send some hardcoded config data, and reboot:
@@ -213,8 +221,8 @@ public class UsbMidiTest extends Activity {
 				midiOut.onRawByte(data[i]);
 			}
 			midiOut.endBlock();
-			//set interval to 10ms
-			data = new byte[] { (byte) 0xF0, (byte) 0x7D, (byte) 0x00, (byte) 0x03, (byte) 0x00,(byte) 0x0A, (byte) 0xF7 };
+			//set interval to 20ms
+			data = new byte[] { (byte) 0xF0, (byte) 0x7D, (byte) 0x00, (byte) 0x03, (byte) 0x00,(byte) 0x14, (byte) 0xF7 };
 			midiOut.beginBlock();
 			for (int i=0; i<data.length; i++) {
 				midiOut.onRawByte(data[i]);
@@ -233,27 +241,6 @@ public class UsbMidiTest extends Activity {
 		}
 	}
 
-	final UsbMidiOutputSelector outputSelector = new UsbMidiOutputSelector(midiDevice) {
-
-		@Override
-		protected void onOutputSelected(UsbMidiOutput output, UsbMidiDevice device, int iface,
-				int index) {
-			toast("Output selection: Interface " + iface + ", Output " + index);
-			try {
-				midiOut = output.getMidiOut();
-			} catch (DeviceNotConnectedException e) {
-				toast("MIDI device has been disconnected");
-			} catch (InterfaceNotAvailableException e) {
-				toast("MIDI interface is unavailable");
-			}
-		}
-
-		@Override
-		protected void onNoSelection(UsbMidiDevice device) {
-			toast("No output selected");
-		}
-	};
-
 	private void chooseMidiDevice() {
 		final List<UsbMidiDevice> devices = UsbMidiDevice.getMidiDevices(this);
 		new AsyncDeviceInfoLookup() {
@@ -267,6 +254,30 @@ public class UsbMidiTest extends Activity {
 						midiDevice = device;
 						mainText.setText("Selected device: " + device.getCurrentDeviceInfo());
 						midiDevice.requestPermission(UsbMidiTest.this);
+						
+						UsbMidiOutputSelector outputSelector = new UsbMidiOutputSelector(midiDevice) {
+
+							@Override
+							protected void onOutputSelected(UsbMidiOutput output, UsbMidiDevice device, int iface,
+									int index) {
+								toast("Output selection: Interface " + iface + ", Output " + index);
+								try {
+									midiOut = output.getMidiOut();
+								} catch (DeviceNotConnectedException e) {
+									toast("MIDI device has been disconnected");
+								} catch (InterfaceNotAvailableException e) {
+									toast("MIDI interface is unavailable");
+								}
+							}
+
+							@Override
+							protected void onNoSelection(UsbMidiDevice device) {
+								toast("No output selected");
+							}
+						};
+						
+						outputSelector.show(getFragmentManager(), "");
+						
 					}
 
 					@Override
@@ -274,6 +285,7 @@ public class UsbMidiTest extends Activity {
 						mainText.setText("No USB MIDI device selected.");
 					}
 				}.show(getFragmentManager(), null);
+				
 			}
 		}.execute(devices.toArray(new UsbMidiDevice[devices.size()]));
 	}
