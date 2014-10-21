@@ -24,6 +24,8 @@ import com.noisepages.nettoyeur.bluetooth.BluetoothSppConnection;
 import com.noisepages.nettoyeur.bluetooth.BluetoothSppObserver;
 import com.noisepages.nettoyeur.bluetooth.midi.BluetoothMidiDevice;
 import com.noisepages.nettoyeur.midi.MidiReceiver;
+import com.noisepages.nettoyeur.midi.util.SystemMessageDecoder;
+import com.noisepages.nettoyeur.midi.util.SystemMessageReceiver;
 
 
 public class BluetoothMidiTest extends Activity implements OnClickListener {
@@ -38,6 +40,7 @@ public class BluetoothMidiTest extends Activity implements OnClickListener {
   private TextView logs;
 
   private BluetoothMidiDevice midiService = null;
+  private SystemMessageDecoder midiSysDecoder;
 
   private Toast toast = null;
 
@@ -82,6 +85,79 @@ public class BluetoothMidiTest extends Activity implements OnClickListener {
       post("connection failed");
     }
   };
+  
+  private final SystemMessageReceiver sysMsgReceiver = new SystemMessageReceiver() {
+	
+	@Override
+	public void onTuneRequest() {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	@Override
+	public void onTimingClock() {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	@Override
+	public void onTimeCode(int value) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	@Override
+	public void onSystemReset() {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	@Override
+	public void onSystemExclusive(byte[] sysex) {
+		// TODO Auto-generated method stub
+		StringBuilder sb = new StringBuilder();
+	    for (byte b : sysex) {
+	        sb.append(String.format("%02X ", b));
+	    }
+	    post(sb.toString());
+	}
+	
+	@Override
+	public void onStop() {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	@Override
+	public void onStart() {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	@Override
+	public void onSongSelect(int index) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	@Override
+	public void onSongPosition(int pointer) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	@Override
+	public void onContinue() {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	@Override
+	public void onActiveSensing() {
+		// TODO Auto-generated method stub
+		
+	}
+};
 
   private final MidiReceiver receiver = new MidiReceiver() {
 	  
@@ -122,7 +198,8 @@ public class BluetoothMidiTest extends Activity implements OnClickListener {
 
     @Override
     public void onRawByte(byte value) {
-      post("raw byte: " + Integer.toHexString(value));
+      //post("raw byte: " + Integer.toHexString(value));
+    	midiSysDecoder.decodeByte(value);
     }
 
     @Override
@@ -140,6 +217,7 @@ public class BluetoothMidiTest extends Activity implements OnClickListener {
     initGui();
     try {
       midiService = new BluetoothMidiDevice(observer, receiver);
+      midiSysDecoder = new SystemMessageDecoder(sysMsgReceiver);
     } catch (IOException e) {
       toast("MIDI not available");
       finish();
